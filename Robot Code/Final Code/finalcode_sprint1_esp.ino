@@ -1,32 +1,36 @@
 #include <SPI.h>
-#include <LoRa.h>           // Sandeep Mistry LoRa Library
+#include <LoRa.h>          
 #include <TinyGPSPlus.h>
 
 // --- UART Configuration (ESP32 <-> Nano for Actuator & Pump) ---
-#define RXD2 4   
-#define TXD2 15  
+#define RXD2_NANO 4  
+#define TXD2_NANO 15 
 
-// --- GPS Module Configuration ---
-const int GPS_RX_PIN = 17;   
-const int GPS_TX_PIN = 16;   
-const uint32_t GPS_BAUD = 9600;
+// --- GPS Module Configuration (UART2, RX=16, TX=17, 9600 Baud) ---
+#define GPS_RX_PIN 16
+#define GPS_TX_PIN 17
+#define GPS_BAUD 9600
 
-// --- LoRa Pins (Sandeep Mistry) ---
+HardwareSerial gpsSerial(2); // Use UART2 for GPS
+
+// --- LoRa Pins & 433MHz Configuration (Sandeep Mistry) ---
 const int LORA_SCK  = 18;
 const int LORA_MISO = 19;
 const int LORA_MOSI = 23;
 const int LORA_SS   = 5;     
 const int LORA_RST  = 14;    
 const int LORA_DIO0 = 2;     
-const long LORA_FREQUENCY = 915E6; 
+const long LORA_FREQUENCY = 433E6; 
 
-// --- Battery Voltage Monitoring Pin ---
+// --- Battery Voltage Monitoring Pin & Fine-Tuned Divider ---
 const int BATTERY_PIN = 35;           
-const float VOLTAGE_MULTIPLIER = 4.0;  
+const float R1_RESISTOR = 56.0; // kOhms
+const float R2_RESISTOR = 10.0; // kOhms
+// Fine-tuned multiplier adjusted to match 12.36V multimeter reading from 12.41V ESP32 output
+const float VOLTAGE_MULTIPLIER = (((R1_RESISTOR + R2_RESISTOR) / R2_RESISTOR) * (12.36 / 11.1)) * (12.36 / 12.41); // ~7.32
 
-// --- Dual BTS7960 Pin Configuration ---
-// Left Driver Module
-const int LEFT_EN   = 32;
+// --- Dual BTS7960 Pin Configuration (Left Enable on D33) ---
+const int LEFT_EN   = 33;  
 const int LEFT_RPWM = 13;
 const int LEFT_LPWM = 12;
 
@@ -40,15 +44,31 @@ TinyGPSPlus gps;
 unsigned long gpsByteCount = 0;
 bool uartHandshakeSuccess = false;
 
-// Menu state machine variables
-enum MenuState { STATE_MAIN_MENU, STATE_GET_PWM, STATE_GET_DIRECTION, STATE_ACTIVE_MOTION };
+enum MenuState { 
+  STATE_MAIN_MENU, 
+  STATE_GET_PWM, 
+  STATE_GET_DIRECTION, 
+  STATE_ACTIVE_MOTION, 
+  STATE_GET_CUSTOM_UART,
+  STATE_LORA_MENU,
+  STATE_GET_LORA_MESSAGE
+};
+
 MenuState currentMenuState = STATE_MAIN_MENU;
-int selectedPwm = 127; // Default PWM
+int selectedPwm = 127; 
 String currentMotionState = "STOPPED";
 
+void handleMenuInput(String input);
+void executeMovement(int directionOption, int pwm);
+void stopMotors();
+void printStatusReport();
+void printMainMenu();
+void printDirectionMenu();
+void printActiveMotionMenu();
+void printLoraMenu();
+
 void setup() {
-  // USB Debug Monitor
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial);
   delay(1000);
 
@@ -56,32 +76,29 @@ void setup() {
   Serial.println("  ESP32 MASTER SYSTEM INITIALIZATION    ");
   Serial.println("========================================");
 
-  // 1. UART Init (for Nano Actuator/Pump control)
-  Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
-  Serial.println("=== UART Ready (ESP32 to Nano) ===");
+  // 1. UART for Nano on Serial1
+  Serial1.begin(9600, SERIAL_8N1, RXD2_NANO, TXD2_NANO);
+  Serial.println("=== UART Ready (ESP32 to Nano) on Serial1 ===");
 
-  // 2. GPS Init
-  Serial1.begin(GPS_BAUD, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
-  Serial.println("=== GPS Serial Active ===");
+  // 2. GPS Serial Initialization (UART2)
+  gpsSerial.begin(GPS_BAUD, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
+  Serial.println("=== GPS Serial started (9600 Baud) ===");
 
-  // 3. LoRa Init
+  // 3. LoRa Init (433MHz)
   SPI.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_SS);
   LoRa.setPins(LORA_SS, LORA_RST, LORA_DIO0);
   if (!LoRa.begin(LORA_FREQUENCY)) {
-    Serial.println("LoRa Initialization Failed!");
+    Serial.println("LoRa (433MHz) Initialization Failed!");
   } else {
-    Serial.println("LoRa Initialized Successfully.");
+    Serial.println("LoRa (433MHz) Initialized Successfully.");
     LoRa.receive(); 
   }
 
-  // 4. Battery Pin Init
+  // 4. Pins Init
   pinMode(BATTERY_PIN, INPUT);
-
-  // 5. Dual BTS7960 Motor Pins Init
   pinMode(LEFT_EN, OUTPUT);
   pinMode(LEFT_RPWM, OUTPUT);
   pinMode(LEFT_LPWM, OUTPUT);
-
   pinMode(RIGHT_EN, OUTPUT);
   pinMode(RIGHT_RPWM, OUTPUT);
   pinMode(RIGHT_LPWM, OUTPUT);
@@ -90,9 +107,6 @@ void setup() {
   digitalWrite(RIGHT_EN, HIGH);
   stopMotors();
 
-  Serial.println("========================================");
-  Serial.println("      SYSTEM READY - MAIN MENU          ");
-  Serial.println("========================================\n");
   printMainMenu();
 }
 
@@ -103,44 +117,37 @@ void loop() {
   if (Serial.available()) {
     String input = Serial.readStringUntil('\n');
     input.trim();
-
     if (input.length() > 0) {
-      // Check if user is typing Nano actuator/pump commands directly
-      if (input == "ACTUATOR_EXTEND" || input == "ACTUATOR_RETRACT" || 
-          input == "PUMP_ON" || input == "PUMP_OFF" || input == "STOP_ALL") {
-        Serial2.println(input);
-        Serial.print("You (ESP32) -> Sent to Nano: ");
-        Serial.println(input);
-      } else {
-        handleMenuInput(input);
-      }
+      handleMenuInput(input);
     }
   }
 
   // =========================================================================
-  // 2. UART Communication Check (Incoming from Nano)
+  // 2. UART Communication Check (Incoming from Nano on Serial1)
   // =========================================================================
-  if (Serial2.available()) {
-    String incoming = Serial2.readStringUntil('\n');
+  if (Serial1.available()) {
+    String incoming = Serial1.readStringUntil('\n');
     incoming.trim();
     if (incoming.length() > 0) {
       uartHandshakeSuccess = true;
-      Serial.print("Nano says <- ");
+      Serial.print("[NANO] Says: ");
       Serial.println(incoming);
+      Serial1.print("ACK:");
+      Serial1.println(incoming);
     }
   }
 
   // =========================================================================
-  // 3. GPS Data Stream Processing
+  // 3. GPS Data Stream Processing via gpsSerial
   // =========================================================================
-  while (Serial1.available() > 0) {
-    char c = Serial1.read();
+  while (gpsSerial.available() > 0) {
+    char c = gpsSerial.read();
     gpsByteCount++;
     gps.encode(c);
   }
 
   // =========================================================================
-  // 4. LoRa Packet Listener
+  // 4. LoRa Packet Listener & Gateway Command Router
   // =========================================================================
   int packetSize = LoRa.parsePacket();
   if (packetSize) {
@@ -148,33 +155,113 @@ void loop() {
     while (LoRa.available()) {
       loraPacket += (char)LoRa.read();
     }
-    Serial.print("\n[LoRa RX] Content: ");
+    loraPacket.trim();
+    
+    Serial.print("\n[LoRa 433MHz RX] Content: ");
     Serial.println(loraPacket);
+
+    if (!loraPacket.startsWith("ACK:") && loraPacket != "GET_ROBOT_STATUS") {
+      String upperCmd = loraPacket;
+      upperCmd.toUpperCase();
+
+      if (upperCmd == "FORWARD" || upperCmd == "MOTOR_FORWARD") {
+        executeMovement(1, selectedPwm);
+      } 
+      else if (upperCmd == "REVERSE" || upperCmd == "MOTOR_REVERSE") {
+        executeMovement(2, selectedPwm);
+      } 
+      else if (upperCmd == "TURN_LEFT" || upperCmd == "MOTOR_LEFT") {
+        executeMovement(3, selectedPwm);
+      } 
+      else if (upperCmd == "TURN_RIGHT" || upperCmd == "MOTOR_RIGHT") {
+        executeMovement(4, selectedPwm);
+      } 
+      else if (upperCmd == "MOTOR_STOP") {
+        stopMotors();
+        Serial.println("[LoRa Action] BTS7960 Motors Stopped.");
+      } 
+      else if (upperCmd == "STOP_ALL") {
+        stopMotors();
+        Serial1.println(loraPacket); 
+        Serial.println("[LoRa Action] Stopped local motors & forwarded STOP_ALL to Nano.");
+      } 
+      else if (upperCmd.startsWith("PWM:")) {
+        int pwmVal = upperCmd.substring(4).toInt();
+        if (pwmVal >= 0 && pwmVal <= 255) {
+          selectedPwm = pwmVal;
+          Serial.print("[LoRa Action] PWM updated to: ");
+          Serial.println(selectedPwm);
+        }
+      } 
+      else {
+        Serial1.println(loraPacket);
+        Serial.print("[UART TX] Forwarded to Nano: ");
+        Serial.println(loraPacket);
+      }
+    }
+
+    if (!loraPacket.startsWith("ACK:")) {
+      LoRa.beginPacket();
+      LoRa.print("ACK:");
+      LoRa.print(loraPacket);
+      LoRa.endPacket();
+      LoRa.receive(); 
+      Serial.print("[LoRa 433MHz TX] Sent ACK for: ");
+      Serial.println(loraPacket);
+    }
   }
 
   // =========================================================================
-  // 5. Periodic Status Prints (Every 5 seconds)
+  // 5. Periodic Status Broadcast & GPS Check (Every 3 seconds)
   // =========================================================================
-  static unsigned long lastPeriodicCheck = 0;
-  if (millis() - lastPeriodicCheck > 5000) {
-    lastPeriodicCheck = millis();
+  static unsigned long lastStatusCheck = 0;
+  const unsigned long statusInterval = 3000;
 
+  if (millis() - lastStatusCheck >= statusInterval) {
+    lastStatusCheck = millis();
+
+    // Read Battery Voltage via D35 using fine-tuned calibration multiplier
     int adcValue = analogRead(BATTERY_PIN);
-    float pinVoltage = (adcValue / 4095.0) * 3.3;
-    float batteryVoltage = pinVoltage * VOLTAGE_MULTIPLIER;
+    float pinVoltage = (adcValue / 4095.0) * 3.3; 
+    float batteryVoltage = pinVoltage * VOLTAGE_MULTIPLIER; 
 
-    Serial.print("[STATUS] Battery: ");
-    Serial.print(batteryVoltage, 2);
-    Serial.print("V | Motion: ");
-    Serial.print(currentMotionState);
-    Serial.print(" | PWM: ");
-    Serial.println(selectedPwm);
+    bool gpsFixValid = gps.location.isValid();
+    float lat = gpsFixValid ? gps.location.lat() : 0.0;
+    float lng = gpsFixValid ? gps.location.lng() : 0.0;
+
+    // --- Format GPS Time to Philippine Time Zone (PHT / UTC+8) Military Time ---
+    String phtTimeStr = "";
+    if (gps.time.isValid()) {
+      int phtHour = gps.time.hour() + 8; // Convert UTC to PHT (UTC+8)
+      if (phtHour >= 24) {
+        phtHour -= 24; // Handle day wrap-around
+      }
+      int phtMinute = gps.time.minute();
+      int phtSecond = gps.time.second();
+
+      char timeBuffer[10];
+      sprintf(timeBuffer, "%02d%02d%02d", phtHour, phtMinute, phtSecond);
+      phtTimeStr = String(timeBuffer);
+    } else {
+      phtTimeStr = String(millis() / 1000); // Fallback until GPS sync
+    }
+
+    // Combine Error status and GPS Fix into the ERR: field
+    String errCombined = "0_GPS" + String(gpsFixValid ? "1" : "0");
+
+    // Construct status message with BATT formatted to exactly 1 decimal place (e.g. 12.4)
+    String robotStatusMsg = "MSG:ROBOT_STATUS,STATE:" + currentMotionState + 
+                            ",ERR:" + errCombined + 
+                            ",BATT:" + String(batteryVoltage, 1) + 
+                            ",LAT:" + String(lat, 6) + ",LNG:" + String(lng, 6) +
+                            ",TS:" + phtTimeStr;
+
+    LoRa.beginPacket();
+    LoRa.print(robotStatusMsg);
+    LoRa.endPacket();
+    LoRa.receive(); 
   }
-
-  delay(10);
 }
-
-// --- Interactive Menu Handling Functions ---
 
 void handleMenuInput(String input) {
   switch (currentMenuState) {
@@ -187,12 +274,17 @@ void handleMenuInput(String input) {
         stopMotors();
         Serial.println("\n[ACTION] BTS7960 Motors Stopped.");
         printMainMenu();
+      } else if (input == "3") {
+        currentMenuState = STATE_GET_CUSTOM_UART;
+        Serial.println("\n--- SEND CUSTOM UART STRING TO NANO ---");
+        Serial.print("Enter custom string/command to send: ");
+      } else if (input == "4") {
+        currentMenuState = STATE_LORA_MENU;
+        printLoraMenu();
       } else {
-        Serial.println("[WARNING] Invalid option. Enter 1 or 2.");
         printMainMenu();
       }
       break;
-
     case STATE_GET_PWM:
       {
         int pwmVal = input.toInt();
@@ -200,35 +292,39 @@ void handleMenuInput(String input) {
           selectedPwm = pwmVal;
           currentMenuState = STATE_GET_DIRECTION;
           printDirectionMenu();
-        } else {
-          Serial.println("[WARNING] Invalid PWM (0-255). Try again: ");
         }
       }
       break;
-
     case STATE_GET_DIRECTION:
-      {
-        int dirChoice = input.toInt();
-        executeMovement(dirChoice, selectedPwm);
+      executeMovement(input.toInt(), selectedPwm);
+      break;
+    case STATE_ACTIVE_MOTION:
+      if (input == "1") {
+        stopMotors();
+        currentMenuState = STATE_MAIN_MENU;
+        printMainMenu();
       }
       break;
-
-    case STATE_ACTIVE_MOTION:
-      {
-        if (input == "1") {
-          stopMotors();
-          printStatusReport();
-          currentMenuState = STATE_MAIN_MENU;
-          printMainMenu();
-        } else if (input == "2") {
-          currentMenuState = STATE_GET_PWM;
-          Serial.println("\n--- STEP 1: SET BTS7960 PWM ---");
-          Serial.print("Enter desired PWM value (0 to 255): ");
-        } else {
-          Serial.println("[WARNING] Invalid choice. Enter [1] to Stop or [2] for New Movement.");
-          printActiveMotionMenu();
-        }
+    case STATE_GET_CUSTOM_UART:
+      Serial1.println(input);
+      currentMenuState = STATE_MAIN_MENU;
+      printMainMenu();
+      break;
+    case STATE_LORA_MENU:
+      if (input == "1") {
+        currentMenuState = STATE_GET_LORA_MESSAGE;
+      } else {
+        currentMenuState = STATE_MAIN_MENU;
+        printMainMenu();
       }
+      break;
+    case STATE_GET_LORA_MESSAGE:
+      LoRa.beginPacket();
+      LoRa.print(input);
+      LoRa.endPacket();
+      LoRa.receive(); 
+      currentMenuState = STATE_MAIN_MENU;
+      printMainMenu();
       break;
   }
 }
@@ -238,41 +334,31 @@ void executeMovement(int directionOption, int pwm) {
   digitalWrite(RIGHT_EN, HIGH);
 
   switch (directionOption) {
-    case 1: // Forward
+    case 1: 
       currentMotionState = "FORWARD";
       analogWrite(LEFT_RPWM, pwm);  analogWrite(LEFT_LPWM, 0);
       analogWrite(RIGHT_RPWM, pwm); analogWrite(RIGHT_LPWM, 0);
       break;
-
-    case 2: // Reversing
+    case 2: 
       currentMotionState = "REVERSING";
       analogWrite(LEFT_RPWM, 0);  analogWrite(LEFT_LPWM, pwm);
       analogWrite(RIGHT_RPWM, 0); analogWrite(RIGHT_LPWM, pwm);
       break;
-
-    case 3: // Turning Left (Right driver only)
+    case 3: 
       currentMotionState = "TURNING LEFT";
       analogWrite(LEFT_RPWM, 0);    analogWrite(LEFT_LPWM, 0);
       analogWrite(RIGHT_RPWM, pwm); analogWrite(RIGHT_LPWM, 0);
       break;
-
-    case 4: // Turning Right (Left driver only)
+    case 4: 
       currentMotionState = "TURNING RIGHT";
       analogWrite(LEFT_RPWM, pwm);  analogWrite(LEFT_LPWM, 0);
       analogWrite(RIGHT_RPWM, 0);   analogWrite(RIGHT_LPWM, 0);
       break;
-
     default:
-      currentMotionState = "STOPPED";
       stopMotors();
-      Serial.println("[WARNING] Invalid choice. Stopping motors.");
       break;
   }
-
-  // Print Status Report immediately after execution
   printStatusReport();
-
-  // Transition to Active Motion state to give the user a direct option to stop
   currentMenuState = STATE_ACTIVE_MOTION;
   printActiveMotionMenu();
 }
@@ -291,37 +377,25 @@ void printStatusReport() {
   Serial.println("========================================");
   Serial.print  (" -> Motion State : "); Serial.println(currentMotionState);
   Serial.print  (" -> Active PWM   : "); Serial.println(selectedPwm);
-  Serial.println(" -> Left Driver  : Active");
-  Serial.println(" -> Right Driver : Active");
   Serial.println("========================================");
 }
 
 void printMainMenu() {
-  Serial.println("\n========================================");
-  Serial.println("        MASTER NODE MAIN MENU           ");
-  Serial.println("========================================");
-  Serial.println(" [1] Configure Dual BTS7960 Movement & PWM");
-  Serial.println(" [2] STOP BTS7960 Motors");
-  Serial.println("----------------------------------------");
-  Serial.print("Select option (1-2): ");
+  Serial.println("\n[1] Move/PWM [2] Stop Motors [3] UART to Nano [4] LoRa Menu");
+  Serial.print("Select option (1-4): ");
 }
 
 void printDirectionMenu() {
-  Serial.println("\n--- STEP 2: SELECT MOTION DIRECTION ---");
-  Serial.print("PWM Value Locked: "); Serial.println(selectedPwm);
-  Serial.println("---------------------------------------");
-  Serial.println(" [1] Forward (Both Drivers)");
-  Serial.println(" [2] Reversing (Both Drivers Reversed)");
-  Serial.println(" [3] Turn Left (Right Driver Only)");
-  Serial.println(" [4] Turn Right (Left Driver Only)");
-  Serial.println("---------------------------------------");
-  Serial.print("Select movement option (1-4): ");
+  Serial.println("\n[1] Forward [2] Reverse [3] Turn Left [4] Turn Right");
+  Serial.print("Select option (1-4): ");
 }
 
 void printActiveMotionMenu() {
-  Serial.println("\n--- ACTIVE MOTION CONTROLS ---");
-  Serial.println(" [1] STOP Robot Now");
-  Serial.println(" [2] Configure New Movement / PWM");
-  Serial.println("------------------------------");
+  Serial.println("\n[1] Stop Motors [2] New Movement");
+  Serial.print("Select option (1-2): ");
+}
+
+void printLoraMenu() {
+  Serial.println("\n[1] Send LoRa Packet [2] Back");
   Serial.print("Select option (1-2): ");
 }
