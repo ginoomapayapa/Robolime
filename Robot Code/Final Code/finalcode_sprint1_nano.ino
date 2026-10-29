@@ -1,110 +1,121 @@
-#include <SoftwareSerial.h>
+#include <SPI.h>
+#include <LoRa.h>
 
-// RX = D5, TX = D6 (Connected to ESP32 via Logic Level Shifter)
-SoftwareSerial nanoSerial(5, 6); 
+#define LORA_SS    5
+#define LORA_RST   14
+#define LORA_DIO0  2
 
-// --- L298N Pin Configuration ---
-const int ACTUATOR_IN1 = 10;
-const int ACTUATOR_IN2 = 9;
-const int PUMP_IN3 = 8;
-const int PUMP_IN4 = 7;
+unsigned long lastStatusRequest = 0;
+const long statusInterval = 3000; // 3 seconds interval for ROBOT_STATUS requests
 
-bool espAcknowledged = false;
-unsigned long lastPingTime = 0;
-const unsigned long pingInterval = 2000; // Repeat handshake ping every 2 seconds until acknowledged
+String pendingCommand = "";
+bool waitingForAck = false;
+unsigned long lastSendTime = 0;
+const unsigned long retryInterval = 1000; 
+int retryCount = 0;
+const int maxRetries = 3;
 
 void setup() {
-  // USB Debug Monitor on Nano (Pins 0 & 1)
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial);
 
-  // Communication with ESP32 via SoftwareSerial
-  nanoSerial.begin(9600);
-  Serial.println("=== Nano Initialized ===");
+  Serial.println(F("[Gateway] Initializing LoRa..."));
+  LoRa.setPins(LORA_SS, LORA_RST, LORA_DIO0);
 
-  // Set motor driver control pins as outputs
-  pinMode(ACTUATOR_IN1, OUTPUT);
-  pinMode(ACTUATOR_IN2, OUTPUT);
-  pinMode(PUMP_IN3, OUTPUT);
-  pinMode(PUMP_IN4, OUTPUT);
+  if (!LoRa.begin(433E6)) {
+    Serial.println(F("[Gateway] Starting LoRa failed!"));
+    while (1);
+  }
   
-  stopAll();
+  Serial.println(F("[Gateway] LoRa Initialized Successfully!"));
+  Serial.println(F("[Gateway] Type commands (e.g., MOTOR_STOP, PUMP_STOP, ACTUATOR_STOP, STOP_ALL) in Serial Monitor."));
+  LoRa.receive(); 
 }
 
 void loop() {
-  // 1. Perform UART Handshake if not yet acknowledged by ESP32
-  if (!espAcknowledged) {
-    if (millis() - lastPingTime >= pingInterval) {
-      lastPingTime = millis();
-      nanoSerial.println("NANO_READY");
-      Serial.println("[UART] Sent initialization string to ESP32: NANO_READY");
-    }
-  }
-
-  // 2. Receive incoming data from ESP32
-  if (nanoSerial.available()) {
-    String incoming = nanoSerial.readStringUntil('\n');
-    incoming.trim();
+  if (millis() - lastStatusRequest >= statusInterval) {
+    lastStatusRequest = millis();
     
-    if (incoming == "ESP32_ACK") {
-      espAcknowledged = true;
-      Serial.println("[UART HANDSHAKE SUCCESS] Acknowledgment received from ESP32!");
-    } else {
-      incoming.toUpperCase();
-      if (incoming.length() > 0) {
-        Serial.print("ESP32 says <- ");
-        Serial.println(incoming);
-        executeCommand(incoming);
+    String autoStatusCmd = "GET_ROBOT_STATUS";
+    LoRa.beginPacket();
+    LoRa.print(autoStatusCmd);
+    LoRa.endPacket();
+    LoRa.receive(); 
+  }
+
+  if (Serial.available() > 0) {
+    String command = Serial.readStringUntil('\n');
+    command.trim();
+
+    if (command.length() > 0) {
+      if (waitingForAck) {
+        Serial.println(F("[Gateway] Warning: Previous command superseded. Queueing new command."));
       }
+
+      pendingCommand = command;
+      waitingForAck = true;
+      retryCount = 0;
+      lastSendTime = millis();
+
+      Serial.print(F("[Gateway] Sending command: "));
+      Serial.println(pendingCommand);
+
+      LoRa.beginPacket();
+      LoRa.print(pendingCommand);
+      LoRa.endPacket();
+      LoRa.receive(); 
     }
   }
 
-  // 3. Manual serial input from Nano monitor to ESP32
-  if (Serial.available()) {
-    String msg = Serial.readStringUntil('\n');
-    msg.trim();
-    if (msg.length() > 0) {
-      nanoSerial.println(msg);
-      Serial.print("You (Nano) -> ");
-      Serial.println(msg);
+  if (waitingForAck && (millis() - lastSendTime >= retryInterval)) {
+    lastSendTime = millis();
+    retryCount++;
+
+    if (retryCount <= maxRetries) {
+      Serial.print(F("[Gateway] No ACK received. Retrying (Attempt "));
+      Serial.print(retryCount);
+      Serial.print(F("/"));
+      Serial.print(maxRetries);
+      Serial.print(F("): "));
+      Serial.println(pendingCommand);
+
+      LoRa.beginPacket();
+      LoRa.print(pendingCommand);
+      LoRa.endPacket();
+      LoRa.receive();
+    } else {
+      Serial.println(F("[Gateway] Error: Command timed out. No acknowledgment from robot."));
+      pendingCommand = "";
+      waitingForAck = false;
+      retryCount = 0;
     }
   }
-}
 
-// Function to execute motor/pump commands
-void executeCommand(String cmd) {
-  if (cmd == "ACTUATOR_EXTEND") {
-    digitalWrite(ACTUATOR_IN1, HIGH);
-    digitalWrite(ACTUATOR_IN2, LOW);
-    Serial.println("[ACTION] Linear Actuator Extending...");
-  } 
-  else if (cmd == "ACTUATOR_RETRACT") {
-    digitalWrite(ACTUATOR_IN1, LOW);
-    digitalWrite(ACTUATOR_IN2, HIGH);
-    Serial.println("[ACTION] Linear Actuator Retracting...");
-  } 
-  else if (cmd == "PUMP_ON") {
-    digitalWrite(PUMP_IN3, HIGH);
-    digitalWrite(PUMP_IN4, LOW);
-    Serial.println("[ACTION] Diaphragm Pump ON.");
-  } 
-  else if (cmd == "PUMP_OFF") {
-    digitalWrite(PUMP_IN3, LOW);
-    digitalWrite(PUMP_IN4, LOW);
-    Serial.println("[ACTION] Diaphragm Pump OFF.");
-  } 
-  else if (cmd == "STOP_ALL" || cmd == "STOP") {
-    stopAll();
-    Serial.println("[ACTION] All actuators and pumps stopped.");
-  } 
-  else {
-    Serial.println("[WARNING] Unknown command received.");
+  int packetSize = LoRa.parsePacket();
+  if (packetSize) {
+    String incomingData = "";
+    while (LoRa.available()) {
+      incomingData += (char)LoRa.read();
+    }
+    incomingData.trim();
+
+    Serial.print(F("[Gateway] Received --> "));
+    Serial.println(incomingData);
+
+    if (incomingData.startsWith("ACK:")) {
+      String ackedCmd = incomingData.substring(4);
+      if (waitingForAck && ackedCmd.equalsIgnoreCase(pendingCommand)) {
+        Serial.println(F("[Gateway] SUCCESS: Command acknowledged by robot."));
+        pendingCommand = "";
+        waitingForAck = false;
+        retryCount = 0;
+      }
+    } else {
+      LoRa.beginPacket();
+      LoRa.print("ACK:");
+      LoRa.print(incomingData);
+      LoRa.endPacket();
+      LoRa.receive(); 
+    }
   }
-}
-
-void stopAll() {
-  digitalWrite(ACTUATOR_IN1, LOW);
-  digitalWrite(ACTUATOR_IN2, LOW);
-  digitalWrite(PUMP_IN3, LOW);
-  digitalWrite(PUMP_IN4, LOW);
 }
