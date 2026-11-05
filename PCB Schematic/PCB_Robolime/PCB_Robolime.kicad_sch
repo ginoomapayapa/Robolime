@@ -3980,6 +3980,22 @@
 		(color 0 0 0 0)
 		(uuid "f235a7e5-51f3-42b7-8f95-e0ee025b2b05")
 	)
+	(junction
+		(at 45.72 106.68)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "fa166e60-9e46-4e11-ab91-901296737581")
+	)
+	(wire
+		(pts
+			(xy 33.02 104.14) (xy 49.53 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "02dc702b-19ad-4216-afd9-9e8dde8b20e2")
+	)
 	(wire
 		(pts
 			(xy 80.01 52.07) (xy 85.09 52.07)
@@ -4132,16 +4148,6 @@
 	)
 	(wire
 		(pts
-			(xy 33.02 104.14) (xy 49.53 104.14)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "21ae5677-1c4e-4751-acc7-151feec8a38f")
-	)
-	(wire
-		(pts
 			(xy 85.09 147.32) (xy 88.9 147.32)
 		)
 		(stroke
@@ -4262,6 +4268,16 @@
 	)
 	(wire
 		(pts
+			(xy 45.72 99.06) (xy 49.53 99.06)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2dcb35cc-0e8f-495a-aa5c-4083ed131d1f")
+	)
+	(wire
+		(pts
 			(xy 52.07 166.37) (xy 57.15 166.37)
 		)
 		(stroke
@@ -4312,6 +4328,16 @@
 	)
 	(wire
 		(pts
+			(xy 41.91 106.68) (xy 45.72 106.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3487d97e-c02a-4e64-b07b-7d72486ad9aa")
+	)
+	(wire
+		(pts
 			(xy 39.37 49.53) (xy 43.18 49.53)
 		)
 		(stroke
@@ -4339,16 +4365,6 @@
 			(type default)
 		)
 		(uuid "3fe8bcdb-101b-4b36-bc6d-380459688911")
-	)
-	(wire
-		(pts
-			(xy 45.72 101.6) (xy 49.53 101.6)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "42b1fc2d-8414-44c2-bc19-6da8b8681ed8")
 	)
 	(wire
 		(pts
@@ -4672,7 +4688,7 @@
 	)
 	(wire
 		(pts
-			(xy 38.1 106.68) (xy 33.02 106.68)
+			(xy 34.29 106.68) (xy 33.02 106.68)
 		)
 		(stroke
 			(width 0)
@@ -4952,16 +4968,6 @@
 	)
 	(wire
 		(pts
-			(xy 45.72 106.68) (xy 49.53 106.68)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c8b0163c-da7d-4169-a266-447c9443d29f")
-	)
-	(wire
-		(pts
 			(xy 140.97 52.07) (xy 140.97 49.53)
 		)
 		(stroke
@@ -4969,6 +4975,16 @@
 			(type default)
 		)
 		(uuid "cb8b49c1-6b72-4a74-9c24-22d66214aa5b")
+	)
+	(wire
+		(pts
+			(xy 45.72 106.68) (xy 49.53 106.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "cda81e5d-f47b-4ad3-8677-91c2bd42430f")
 	)
 	(wire
 		(pts
@@ -4982,16 +4998,6 @@
 	)
 	(wire
 		(pts
-			(xy 33.02 101.6) (xy 33.02 104.14)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d2827fa0-e9ba-4474-bfe4-109d663e562c")
-	)
-	(wire
-		(pts
 			(xy 39.37 52.07) (xy 43.18 52.07)
 		)
 		(stroke
@@ -5002,7 +5008,7 @@
 	)
 	(wire
 		(pts
-			(xy 29.21 104.14) (xy 33.02 104.14)
+			(xy 26.67 104.14) (xy 33.02 104.14)
 		)
 		(stroke
 			(width 0)
@@ -5039,16 +5045,6 @@
 			(type default)
 		)
 		(uuid "dd6feb55-1141-4d04-8f51-9a5eca176108")
-	)
-	(wire
-		(pts
-			(xy 33.02 101.6) (xy 38.1 101.6)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "de84832a-8a22-443c-bc25-0a33330705c7")
 	)
 	(wire
 		(pts
@@ -5481,7 +5477,7 @@
 		(uuid "733d8dfd-2a79-4ee2-ad9d-abef436e8e7f")
 	)
 	(label "3V ESP32"
-		(at 29.21 104.14 180)
+		(at 26.67 104.14 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -7491,7 +7487,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 41.91 101.6 90)
+		(at 45.72 102.87 180)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -7499,20 +7495,20 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "b4438b6f-a840-406e-93f0-1d8bf03e345d")
 		(property "Reference" "0.1uF4"
-			(at 41.91 96.52 90)
+			(at 36.83 98.298 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify right)
 			)
 		)
 		(property "Value" "C"
-			(at 43.1799 97.79 0)
+			(at 41.91 101.6001 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7524,7 +7520,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm"
-			(at 45.72 100.6348 0)
+			(at 44.7548 99.06 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7535,7 +7531,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 41.91 101.6 0)
+			(at 45.72 102.87 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7546,7 +7542,7 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
-			(at 41.91 101.6 0)
+			(at 45.72 102.87 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8448,7 +8444,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 41.91 106.68 270)
+		(at 38.1 106.68 270)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -8458,7 +8454,7 @@
 		(dnp no)
 		(uuid "f87a82fb-6c4b-4502-ad79-2555e8b84ca8")
 		(property "Reference" "10k1"
-			(at 42.164 109.22 90)
+			(at 38.354 109.22 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -8468,7 +8464,7 @@
 			)
 		)
 		(property "Value" "R"
-			(at 40.6401 109.22 0)
+			(at 36.8301 109.22 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8480,7 +8476,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal"
-			(at 41.91 104.902 90)
+			(at 38.1 104.902 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8491,7 +8487,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 41.91 106.68 0)
+			(at 38.1 106.68 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8502,7 +8498,7 @@
 			)
 		)
 		(property "Description" "Resistor"
-			(at 41.91 106.68 0)
+			(at 38.1 106.68 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)

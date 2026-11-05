@@ -661,7 +661,7 @@
         "uuid": "ccaefd54-5bd7-474a-9134-590ff13e8c2c"
       }
     ],
-    "used_designators": "LEFT_ESP33,#PWR13,RIGHT_ESP33",
+    "used_designators": "",
     "variants": []
   },
   "sheets": [
