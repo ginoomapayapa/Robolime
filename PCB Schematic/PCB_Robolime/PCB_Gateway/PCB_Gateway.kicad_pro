@@ -172,7 +172,6 @@
         {
           "td_allow_use_two_tracks": true,
           "td_curve_segcount": 0,
-          "td_enabled": false,
           "td_height_ratio": 1.0,
           "td_length_ratio": 0.5,
           "td_maxheight": 2.0,
@@ -184,7 +183,6 @@
         {
           "td_allow_use_two_tracks": true,
           "td_curve_segcount": 0,
-          "td_enabled": false,
           "td_height_ratio": 1.0,
           "td_length_ratio": 0.5,
           "td_maxheight": 2.0,
@@ -196,7 +194,6 @@
         {
           "td_allow_use_two_tracks": true,
           "td_curve_segcount": 0,
-          "td_enabled": false,
           "td_height_ratio": 1.0,
           "td_length_ratio": 0.5,
           "td_maxheight": 2.0,
@@ -665,7 +662,7 @@
         "uuid": "396ad829-72c0-4601-9cc4-15b468a3a60b"
       }
     ],
-    "used_designators": "J5-7",
+    "used_designators": "BLUE1,0.1uF1,R6-9,J5-8,#PWR11-13,LEFT_BTN1,SW1,DISPLAY_MODULE1,SEL_BUTTON3,DOWN_BTN1,GREEN1,RED1,RIGHT_BTN1,ROTARY_ENCODER1,SEL_BTN1,UP_BTN1",
     "variants": []
   },
   "sheets": [
