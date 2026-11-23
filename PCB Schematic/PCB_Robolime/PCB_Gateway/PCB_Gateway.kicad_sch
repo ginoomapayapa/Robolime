@@ -5,6 +5,147 @@
 	(uuid "396ad829-72c0-4601-9cc4-15b468a3a60b")
 	(paper "A4")
 	(lib_symbols
+		(symbol "Connector:Conn_01x01_Socket"
+			(pin_names
+				(offset 1.016)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "J"
+				(at 0 2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "Conn_01x01_Socket"
+				(at 0 -2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Generic connector, single row, 01x01, script generated"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_locked" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "connector"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "Connector*:*_1x??_*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "Conn_01x01_Socket_1_1"
+				(polyline
+					(pts
+						(xy -1.27 0) (xy -0.508 0)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start 0 -0.508)
+					(mid -0.5058 0)
+					(end 0 0.508)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin passive line
+					(at -5.08 0 0)
+					(length 3.81)
+					(name "Pin_1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Connector:Conn_01x02_Socket"
 			(pin_names
 				(offset 1.016)
@@ -5264,6 +5405,12 @@
 		(uuid "1b6c516e-6946-49cc-aaa0-c3d73770f9f0")
 	)
 	(junction
+		(at 229.87 34.29)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "37288d5b-969d-4e74-b8bb-f00e6a0552a9")
+	)
+	(junction
 		(at 104.14 27.94)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -5298,6 +5445,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "72a6d053-7b96-4f3b-b6d7-2d55230bbd00")
+	)
+	(junction
+		(at 229.87 31.75)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "75946158-3953-4a78-9be5-398bfaf3249e")
 	)
 	(junction
 		(at 165.1 53.34)
@@ -5434,6 +5587,16 @@
 			(type default)
 		)
 		(uuid "0cf9a13e-a44a-4297-b514-856c70fcb227")
+	)
+	(wire
+		(pts
+			(xy 229.87 27.94) (xy 229.87 31.75)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0d2be3de-493e-4476-a626-60b9982616bd")
 	)
 	(wire
 		(pts
@@ -5707,7 +5870,7 @@
 	)
 	(wire
 		(pts
-			(xy 264.16 62.23) (xy 259.08 62.23)
+			(xy 261.62 62.23) (xy 259.08 62.23)
 		)
 		(stroke
 			(width 0)
@@ -5934,6 +6097,16 @@
 			(type default)
 		)
 		(uuid "73ec6a36-55f4-488a-83d7-f9016348673a")
+	)
+	(wire
+		(pts
+			(xy 229.87 31.75) (xy 229.87 34.29)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "751025f9-a120-4eb0-8b25-338f9f6d17f9")
 	)
 	(wire
 		(pts
@@ -6815,16 +6988,6 @@
 		)
 		(uuid "87b1fd68-007f-4aaf-a0e3-aaacae1f1f0b")
 	)
-	(label "LI-ION BATT"
-		(at 264.16 62.23 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "8a8c53e5-e3e2-4855-bfc8-ac54180a5602")
-	)
 	(label "LoRa DIO0"
 		(at 106.68 53.34 0)
 		(effects
@@ -7530,6 +7693,85 @@
 			(project "PCB_Gateway"
 				(path "/396ad829-72c0-4601-9cc4-15b468a3a60b"
 					(reference "J3")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector:Conn_01x01_Socket")
+		(at 266.7 62.23 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "23a66c38-0ac5-48ee-a731-9fcb1c12a4bf")
+		(property "Reference" "LI-IONBATT1"
+			(at 267.97 62.23 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "Conn_01x01_Socket"
+			(at 267.97 63.4999 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical"
+			(at 266.7 62.23 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 266.7 62.23 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Generic connector, single row, 01x01, script generated"
+			(at 266.7 62.23 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "81eefa2d-f78a-466c-9b1d-92cd90d24c2c")
+		)
+		(instances
+			(project "PCB_Gateway"
+				(path "/396ad829-72c0-4601-9cc4-15b468a3a60b"
+					(reference "LI-IONBATT1")
 					(unit 1)
 				)
 			)
@@ -9113,7 +9355,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Fuse:Fuse_Bourns_MF-RG300"
+		(property "Footprint" "Fuse:Fuseholder_Clip-5x20mm_Littelfuse_100_Inline_P20.50x4.60mm_D1.30mm_Horizontal"
 			(at 233.68 67.818 90)
 			(hide yes)
 			(show_name no)
@@ -9989,6 +10231,84 @@
 			(project "PCB_Gateway"
 				(path "/396ad829-72c0-4601-9cc4-15b468a3a60b"
 					(reference "#PWR011")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 229.87 27.94 180)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "bfe4e258-f81c-4945-8626-b7f57fd24b2a")
+		(property "Reference" "#PWR04"
+			(at 229.87 21.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 229.87 22.86 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 229.87 27.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 229.87 27.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 229.87 27.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "70cf0447-8fe3-4fe7-a9f8-357c513021b4")
+		)
+		(instances
+			(project "PCB_Gateway"
+				(path "/396ad829-72c0-4601-9cc4-15b468a3a60b"
+					(reference "#PWR04")
 					(unit 1)
 				)
 			)
