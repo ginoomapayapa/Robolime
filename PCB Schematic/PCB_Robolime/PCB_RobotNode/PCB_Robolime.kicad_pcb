@@ -9318,8 +9318,8 @@
 			)
 		)
 	)
-	(gr_text "ROBOLIME V1 · BSCPE 4-1 · 4108"
-		(at 106.934 136.652 0)
+	(gr_text "ROBOLIME V1"
+		(at 133.858 136.906 0)
 		(layer "F.SilkS")
 		(uuid "107a2ded-41da-4222-a3a3-a3c6433c05ee")
 		(effects
